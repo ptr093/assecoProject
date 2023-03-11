@@ -10,13 +10,13 @@ namespace assecoProject.Services
 {
     public class PathInfoRepository : IPathInfoRepository
     {
-        public async Task<string> GetAccessToken()
+        public async Task<string> GetAccessToken(string ClientId, string ClientSecret,string authToken)
         {
             AccessTokenResponse token = null;
 
             try
             {
-                HttpClient client = HeadersForAccessTokenGenerate();
+                HttpClient client = HeadersForAccessTokenGenerate(ClientId,ClientSecret);
                 string body = "grant_type=client_credentials&scope=USERAPI";
                 client.BaseAddress = new Uri("https://oauth2.assecobs.pl/api/oauth2/token");
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress);
@@ -30,7 +30,7 @@ namespace assecoProject.Services
                 postData.Add(new KeyValuePair<string, string>("scope", "USERAPI"));
 
                 request.Content = new FormUrlEncodedContent(postData);
-                HttpResponseMessage tokenResponse = client.PostAsync("https://oauth2.assecobs.pl/api/oauth2/token", new FormUrlEncodedContent(postData)).Result;
+                HttpResponseMessage tokenResponse = client.PostAsync(authToken, new FormUrlEncodedContent(postData)).Result;
 
                 //var token = tokenResponse.Content.ReadAsStringAsync().Result;
                 token = await tokenResponse.Content.ReadAsAsync<AccessTokenResponse>(new[] { new JsonMediaTypeFormatter() });
@@ -42,12 +42,12 @@ namespace assecoProject.Services
             return token != null ? token.AccessToken : null;
         }
 
-        public async Task<string> GetXmlFile(string accessToken)
+        public async Task<string> GetXmlFile(string accessToken,string wadlEnpoint)
         {
             string getCountryNamesResponse = null;
             try
             {
-                string getSecurityQuestionEndPoint = "https://portalcloudapi-test.assecobs.pl/?wadl&DBC=rest";
+               
 
               
 
@@ -57,7 +57,7 @@ namespace assecoProject.Services
 
                 try
                 {
-                    client.BaseAddress = new Uri(getSecurityQuestionEndPoint);
+                    client.BaseAddress = new Uri(wadlEnpoint);
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
@@ -86,10 +86,9 @@ namespace assecoProject.Services
             return getCountryNamesResponse; //GetCountryNames
         }
 
-        public HttpClient HeadersForAccessTokenGenerate()
+        public HttpClient HeadersForAccessTokenGenerate(string clientId, string clientSecret)
         {
-            string clientId = "PortalCloudAPI_F1645EDF0ABE4CBBA9D5135314117619";
-            string clientSecret = "sV7fO40gNd3v9x48beVq42zy07Mv6UJB";
+     
             HttpClientHandler handler = new HttpClientHandler() { UseDefaultCredentials = false };
             HttpClient client = new HttpClient(handler);
             try

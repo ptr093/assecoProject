@@ -1,6 +1,7 @@
 ﻿using assecoProject.Models;
 using assecoProject.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
 namespace assecoProject.Controllers
@@ -9,17 +10,24 @@ namespace assecoProject.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IPathInfoRepository pathInfoRepository;
+        private readonly IConfiguration configuration;
 
-        public HomeController(ILogger<HomeController> logger,IPathInfoRepository pathInfoRepository)
+        public HomeController(ILogger<HomeController> logger,IPathInfoRepository pathInfoRepository, IConfiguration configuration)
         {
+            if (configuration is null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
             _logger = logger;
             this.pathInfoRepository = pathInfoRepository ?? throw new ArgumentNullException(nameof(pathInfoRepository));
+            this.configuration = configuration;
         }
 
         public IActionResult Index()
         {
-            var token = pathInfoRepository.GetAccessToken();
-            var xmlFile = pathInfoRepository.GetXmlFile(token.Result);
+            var token = pathInfoRepository.GetAccessToken(configuration.GetValue<string>("AssecoConfig:ClientId"), configuration.GetValue<string>("AssecoConfig:ClientSecret"), configuration.GetValue<string>("AssecoConfig:AuthToken"));
+            var xmlFile = pathInfoRepository.GetXmlFile(token.Result, configuration.GetValue<string>("AssecoConfig:wadlEndpoint"));
             var lista = pathInfoRepository.ParseXmlToList(xmlFile.Result);
          
 
